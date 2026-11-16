@@ -34,6 +34,23 @@ def build_mlp(
     l1_output: float = 1e-5,
     learning_rate: float = 1e-3,
 ) -> keras.Model:
+    """Two residual blocks (units_1 then units_2, narrowing as is typical
+    for a tabular MLP) followed by a single sigmoid output unit.
+
+    Regularisation is deliberately layered rather than relying on one
+    technique: L2 inside every Dense layer discourages large weights
+    without zeroing them out (keeps every input feature "available"),
+    Dropout inside each block randomly deactivates units during training
+    so the network cannot over-rely on any single neuron, BatchNorm
+    stabilises the distribution of layer inputs (letting a higher
+    learning rate be used safely), and a small L1 penalty on the output
+    layer encourages sparsity in how the final decision combines the
+    two blocks' outputs. None of these alone fully prevents
+    overfitting on a dataset this size, but combined with the
+    EarlyStopping callback used at training time (see
+    scripts/q3_neural_network.py) they keep the train/validation loss
+    gap small (Figure 7 in the report).
+    """
     inputs = keras.Input(shape=(input_dim,))
     x = residual_block(inputs, units_1, dropout, l2)
     x = residual_block(x, units_2, dropout, l2)
@@ -45,6 +62,10 @@ def build_mlp(
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
         loss="binary_crossentropy",
+        # AUC is threshold-independent and robust to class imbalance, so it
+        # is tracked (and used as the tuning objective) alongside accuracy
+        # rather than relying on accuracy alone, which a majority-class
+        # predictor could inflate on this imbalanced dataset.
         metrics=[keras.metrics.AUC(name="auc"), "accuracy"],
     )
     return model
