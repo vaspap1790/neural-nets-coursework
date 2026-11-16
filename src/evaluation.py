@@ -55,3 +55,22 @@ def metrics_table(models: Dict[str, Dict[str, float]]):
     import pandas as pd
 
     return pd.DataFrame(models).T.round(4)
+
+
+def plot_training_history(history, path: Path) -> None:
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+    axes[0].plot(history.history["loss"], label="train")
+    axes[0].plot(history.history["val_loss"], label="validation")
+    axes[0].set_title("Loss")
+    axes[0].set_xlabel("Epoch")
+    axes[0].legend()
+
+    axes[1].plot(history.history["auc"], label="train")
+    axes[1].plot(history.history["val_auc"], label="validation")
+    axes[1].set_title("AUC")
+    axes[1].set_xlabel("Epoch")
+    axes[1].legend()
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)

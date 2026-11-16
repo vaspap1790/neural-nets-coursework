@@ -7,3 +7,4 @@ tensorflow
 shap
 xgboost
 keras-tuner
+tensorboard
